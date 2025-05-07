@@ -1,7 +1,7 @@
 import os
 import requests
 from pathlib import Path
-from pypdf import PdfReader, PageObject
+from pypdf import PdfReader, PageObject, PdfWriter
 from docling.datamodel.base_models import InputFormat
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TesseractCliOcrOptions
@@ -28,7 +28,9 @@ def create_tesseract_converter() -> DocumentConverter:
     return converter
 
 
-def get_pdf_pages(pdf_path_string: str) -> list[PageObject]:
+def get_pdf_pages(
+        pdf_path_string: str
+) -> list[PageObject]:
     """Return all the PDF pages."""
 
     try:
@@ -45,16 +47,45 @@ def get_pdf_pages(pdf_path_string: str) -> list[PageObject]:
         raise []
 
 
-def create_page_path(page_pdf_folder: str, pdf_name: str, page_name: str) -> str:
+def create_page_path(
+        pdf_page: PageObject,
+        page_pdf_folder: str,
+        pdf_name: str,
+        page_name: str
+) -> str:
     """Create the path to the page PDF file."""
 
-    pdf_page_path = os.path.join(f"{page_pdf_folder}/{pdf_name}", page_name + ".pdf")
+    pdf_page_path = os.path.join(f"{page_pdf_folder}/{pdf_name}/{page_name}.pdf")
     os.makedirs(os.path.dirname(pdf_page_path), exist_ok=True)
+
+    # write the page in the pdf_page_path
+    writer = PdfWriter()
+    writer.add_page(pdf_page)
+    writer.write(pdf_page_path)
 
     return pdf_page_path
 
 
-def convert_text_to_markdown(page_path_string: str, converter: DocumentConverter) -> str:
+def save_temporary_md_file(
+        markdown_folder: str,
+        pdf_name: str,
+        page_name: str,
+        md_generated: str
+):
+    """Save the page in Markdown format in a temporary folder."""
+
+    # declaring a page path in Markdown and save in markdown_folder
+    page_path = os.path.join(f"{markdown_folder}/{pdf_name}", page_name + ".md")
+    os.makedirs(os.path.dirname(page_path), exist_ok=True)
+
+    with open(page_path, "w") as f:
+        f.write(md_generated)
+
+
+def convert_text_to_markdown(
+        page_path_string: str,
+        converter: DocumentConverter
+) -> str:
     """Convert text generated from OCR to Markdown format with docling."""
 
     try:
@@ -73,7 +104,11 @@ def convert_text_to_markdown(page_path_string: str, converter: DocumentConverter
         raise e
 
 
-def concat_markdown_pages_into_file(markdown_pages: list[str], full_file_markdown_folder: str,  markdown_file_path: str) -> str:
+def concat_markdown_pages_into_file(
+        markdown_pages: list[str],
+        full_file_markdown_folder: str,
+        markdown_file_path: str
+) -> str:
     """Concatenate all pages generated from docling into a single file."""
 
     full_path = os.path.join(full_file_markdown_folder, markdown_file_path)
@@ -89,7 +124,11 @@ def concat_markdown_pages_into_file(markdown_pages: list[str], full_file_markdow
     return full_path
 
 
-def put_markdown_file_into_oci_bucket(entire_pdf_path: str, pdf_name: str, suffix: str):
+def put_markdown_file_into_oci_bucket(
+        entire_pdf_path: str,
+        pdf_name: str,
+        suffix: str
+):
     """Put a file in Markdown into an OCI bucket."""
 
     with open(entire_pdf_path, "rb") as f:

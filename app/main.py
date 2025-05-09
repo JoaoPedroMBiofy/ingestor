@@ -3,7 +3,6 @@ import time
 import shutil
 import logging
 import tempfile
-from app.utils import utils
 from app.document import document
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from app.embedding import embedding
@@ -44,7 +43,7 @@ def healthcheck():
 async def ingest_pdf(
         file: UploadFile = File(...),
         collection_name: str = Form(None),
-        splitter_type: str = Form("semantic"),
+        # splitter_type: str = Form("semantic"),
 ):
     """
     Accept a PDF file, process it (convert, chunk, embed), and send to Qdrant.

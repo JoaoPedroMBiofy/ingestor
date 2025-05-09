@@ -1,7 +1,6 @@
 import requests
 import logging
 from app.config import config
-from oci.config import validate_config
 from oci.retry import NoneRetryStrategy
 from langchain_community.embeddings import OCIGenAIEmbeddings
 from oci.generative_ai_inference import GenerativeAiInferenceClient

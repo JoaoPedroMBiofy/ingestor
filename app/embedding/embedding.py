@@ -1,6 +1,5 @@
 import os
 import logging
-from uuid import uuid4
 from app.utils import utils
 from app.config import config
 from langchain.schema import Document
@@ -8,7 +7,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Distance
 from langchain_qdrant import QdrantVectorStore
 from typing import Literal, List
-from qdrant_client.models import PointStruct
 from qdrant_client.models import VectorParams
 from langchain_community.embeddings import OCIGenAIEmbeddings
 from langchain_experimental.text_splitter import SemanticChunker

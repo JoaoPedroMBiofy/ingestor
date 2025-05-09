@@ -20,8 +20,10 @@ ENV PYTHONPATH=/app/src
 COPY requirements.txt .
 RUN uv pip install --system -r requirements.txt
 
-COPY src ./src
+COPY app ./app
 COPY .env .
 
+ENV PYTHONBUFFERED = 1
+
 # Default command
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -87,7 +87,7 @@ def save_temporary_md_file(
         pdf_name: str,
         page_name: str,
         md_generated: str
-):
+) -> str:
     """
     Save the page in Markdown format in a temporary folder.
     """
@@ -99,6 +99,8 @@ def save_temporary_md_file(
 
     with open(page_path, "w") as f:
         f.write(md_generated)
+
+    return page_path
 
 
 def convert_text_to_markdown(

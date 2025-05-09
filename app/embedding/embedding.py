@@ -113,7 +113,7 @@ def send_embed_to_qdrant(
 
     if not documents:
         logger.info("No documents to process")
-        return None
+        raise "No documents to process"
 
     try:
         if not client.collection_exists(collection_name):
@@ -132,13 +132,17 @@ def send_embed_to_qdrant(
 
     logger.info(f"Time to Embed")
 
-    vector_store = QdrantVectorStore(
-        client=client,
-        collection_name=collection_name,
-        distance=Distance.COSINE,
-        embedding=embeddings_model,
-    )
-    vector_store.add_documents(documents=documents)
+    try:
+        vector_store = QdrantVectorStore(
+            client=client,
+            collection_name=collection_name,
+            distance=Distance.COSINE,
+            embedding=embeddings_model,
+        )
+        vector_store.add_documents(documents=documents)
+    except Exception as e:
+        logger.error(f"Error adding documents to Qdrant: {e}")
+        raise e
 
     # this is langchain didn't exist
     # # Generate embeddings
@@ -174,6 +178,32 @@ def send_embed_to_qdrant(
     return None
 
 
+def create_document_from_markdown(
+        markdown_file: str,
+        collection_name: str = None
+) -> list[Document]:
+    """
+    Create the embeddings for a Markdown file.
+
+    :param markdown_file:
+    :param collection_name:
+    :return:
+    """
+
+    doc_list: list[Document] = []
+
+    with open(markdown_file, "r", encoding="utf-8") as f:
+        raw_text = f.read()
+
+    doc = Document(
+        page_content=raw_text,
+        metadata={"file_name": f"{collection_name}"}
+    )
+    doc_list.append(doc)
+
+    return doc_list
+
+
 def create_embeddings_from_markdown(
     markdown_file: str,
     collection_name: str = None,
@@ -191,10 +221,6 @@ def create_embeddings_from_markdown(
         dict: Information about the embedding process
     """
 
-    # If collection_name is not provided, use the filename without extension
-    if not collection_name:
-        collection_name = os.path.splitext(os.path.basename(markdown_file))[0]
-
     logger.info(f"Using collection name: {collection_name}")
 
     embeddings_model: OCIGenAIEmbeddings
@@ -208,12 +234,22 @@ def create_embeddings_from_markdown(
 
     logger.info(f"Initialized embeddings model: {embeddings_model}")
 
+    try:
+        # transform a Markdown file into a document
+        documents = create_document_from_markdown(
+            markdown_file=markdown_file,
+            collection_name=collection_name
+        )
+    except Exception as e:
+        logger.error(f"Error creating document from Markdown file: {e}")
+        raise e
+
     # Chunk the Markdown file
-    documents = chunk_and_embed_markdown(
-        file_path=markdown_file,
-        embeddings_model=embeddings_model,
-        strategy=strategy
-    )
+    # documents = chunk_and_embed_markdown(
+    #     file_path=markdown_file,
+    #     embeddings_model=embeddings_model,
+    #     strategy=strategy
+    # )
 
     # Send embeddings to Qdrant
     send_embed_to_qdrant(

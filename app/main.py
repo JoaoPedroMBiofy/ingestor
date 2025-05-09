@@ -42,8 +42,6 @@ def healthcheck():
 )
 async def ingest_pdf(
         file: UploadFile = File(...),
-        collection_name: str = Form(None),
-        # splitter_type: str = Form("semantic"),
 ):
     """
     Accept a PDF file, process it (convert, chunk, embed), and send to Qdrant.
@@ -62,38 +60,24 @@ async def ingest_pdf(
 
     try:
 
+        collection_name = os.path.splitext(os.path.basename(file.filename))[0]
+
+        logger.info(collection_name)
+
         logger.info(f"Temp PDF path: {temp_pdf_path}")
 
         start_ingestion = time.time()
 
         # Convert PDF to Markdown with OCR (returns Markdown text or list of md file paths)
-        markdown_file_path = document.pdf_to_docling_with_ocr(temp_pdf_path)
+        embedding_result = document.pdf_to_docling_with_ocr(temp_pdf_path, collection_name)
 
         end_ingestion = time.time()
         logger.info(f"Time to process ingestion: {end_ingestion - start_ingestion} seconds")
 
-        # Prepare embedding arguments
-        if not collection_name:
-            # Default: use PDF file name as collection name (without extension)
-            collection_name = os.path.splitext(os.path.basename(file.filename))[0]
-
-        logger.info("Start File Pipeline")
-
-        start_pipeline = time.time()
-
-        # Create embeddings and send to Qdrant
-        embedding_result = embedding.create_embeddings_from_markdown(
-            markdown_file=markdown_file_path,
-            collection_name=collection_name,
-        )
-
-        end_pipeline = time.time()
-        logger.info(f"Time to process pipeline: {end_pipeline - start_pipeline} seconds")
-
         return {
             "message": "Pipeline completed successfully",
             "filename": file.filename,
-            "markdown_file": markdown_file_path,
+            "markdown_file": file.filename.lower().replace('.pdf', '.md'),
             "embedding_result": embedding_result
         }
 
